@@ -47,7 +47,7 @@ function toJsonSafe(value: unknown): Prisma.InputJsonValue {
  * Active lotteries for the user-facing list, with cover image + remaining count.
  */
 export async function getAllLottery() {
-  //await requireUser()
+  await requireUser()
 
   const rows = await prisma.lottery.findMany({
     where: { status: "ACTIVE" },
