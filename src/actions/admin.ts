@@ -868,3 +868,151 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     })),
   }
 }
+
+// Replace getPayments with this version:
+
+export type AdminPaymentStatus = "PENDING" | "SUCCESS" | "FAILED"
+
+export interface AdminPaymentItem {
+  id: string
+  userId: string
+  lotteryId: string
+  receiptText: string
+  amountEtb: number
+  status: AdminPaymentStatus
+  verifiedAt: Date | null
+  providerRaw: unknown
+  createdAt: Date
+  updatedAt: Date
+  user: { id: string; name: string; telegramId: string }
+  lottery: { id: string; name: string }
+  ticketsCount: number
+}
+
+export interface AdminPaymentsResult {
+  total: number
+  take: number
+  skip: number
+  items: AdminPaymentItem[]
+}
+
+export async function getPayments(
+  opts: { take?: number; skip?: number; status?: AdminPaymentStatus } = {},
+): Promise<AdminPaymentsResult> {
+  await requireAdmin()
+  const take = Math.min(Math.max(opts.take ?? 50, 1), 100)
+  const skip = Math.max(opts.skip ?? 0, 0)
+  const where = opts.status ? { status: opts.status } : {}
+
+  const [rows, total] = await Promise.all([
+    prisma.payment.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take,
+      skip,
+      include: {
+        user: { select: { id: true, name: true, telegramId: true } },
+        lottery: { select: { id: true, name: true } },
+        _count: { select: { tickets: true } },
+      },
+    }),
+    prisma.payment.count({ where }),
+  ])
+
+  return {
+    total,
+    take,
+    skip,
+    items: rows.map((p) => ({
+      id: p.id,
+      userId: p.userId,
+      lotteryId: p.lotteryId,
+      receiptText: p.receiptText,
+      amountEtb: toNum(p.amountEtb),
+      status: p.status,
+      verifiedAt: p.verifiedAt,
+      providerRaw: p.providerRaw, // already returned by default — just expose it
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      user: p.user,
+      lottery: p.lottery,
+      ticketsCount: p._count.tickets,
+    })),
+  }
+}
+
+// ---------- Payment detail ----------
+
+export interface PaymentDetailTicket {
+  id: string
+  ticketNumber: string
+  status: "VALID" | "WINNER" | "VOID"
+  purchasedAt: Date
+}
+
+export interface PaymentDetail {
+  id: string
+  userId: string
+  lotteryId: string
+  receiptText: string
+  amountEtb: number
+  status: AdminPaymentStatus
+  verifiedAt: Date | null
+  providerRaw: unknown
+  createdAt: Date
+  updatedAt: Date
+  user: { id: string; name: string; telegramId: string }
+  lottery: {
+    id: string
+    name: string
+    ticketPriceEtb: number
+    drawDate: Date
+  }
+  tickets: PaymentDetailTicket[]
+}
+
+export async function getPaymentDetail(id: string): Promise<PaymentDetail> {
+  await requireAdmin()
+
+  const p = await prisma.payment.findUnique({
+    where: { id },
+    include: {
+      user: { select: { id: true, name: true, telegramId: true } },
+      lottery: {
+        select: { id: true, name: true, ticketPriceEtb: true, drawDate: true },
+      },
+      tickets: {
+        orderBy: { ticketNumber: "asc" },
+        select: {
+          id: true,
+          ticketNumber: true,
+          status: true,
+          purchasedAt: true,
+        },
+      },
+    },
+  })
+
+  if (!p) throw new Error("Payment not found")
+
+  return {
+    id: p.id,
+    userId: p.userId,
+    lotteryId: p.lotteryId,
+    receiptText: p.receiptText,
+    amountEtb: toNum(p.amountEtb),
+    status: p.status,
+    verifiedAt: p.verifiedAt,
+    providerRaw: p.providerRaw,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+    user: p.user,
+    lottery: {
+      id: p.lottery.id,
+      name: p.lottery.name,
+      ticketPriceEtb: toNum(p.lottery.ticketPriceEtb),
+      drawDate: p.lottery.drawDate,
+    },
+    tickets: p.tickets,
+  }
+}
