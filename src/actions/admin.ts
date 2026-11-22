@@ -365,7 +365,7 @@ export async function getUsers(opts: { take?: number; skip?: number } = {}) {
   }
 }
 
-export async function getPayments(opts: { take?: number; skip?: number } = {}) {
+/* export async function getPayments(opts: { take?: number; skip?: number } = {}) {
   await requireAdmin()
   const take = Math.min(Math.max(opts.take ?? 50, 1), 100)
   const skip = Math.max(opts.skip ?? 0, 0)
@@ -403,7 +403,7 @@ export async function getPayments(opts: { take?: number; skip?: number } = {}) {
       ticketsCount: p._count.tickets,
     })),
   }
-}
+}*/
 
 
 export async function getAudit(
