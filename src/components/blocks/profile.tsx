@@ -8,6 +8,7 @@ import {
   IconPhone,
   IconShieldCheck,
 } from "@tabler/icons-react"
+import Link from "next/link"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -112,7 +113,9 @@ export function Profile({ user }: { user: ProfileUser }) {
         </Item>
 
         {isAdmin && (
-          <Item variant="muted">
+          <Item variant="muted" render={
+            <Link href="/admin" />
+          }>
             <ItemMedia variant="icon">
               <IconShieldCheck className="text-primary" />
             </ItemMedia>
@@ -122,6 +125,7 @@ export function Profile({ user }: { user: ProfileUser }) {
                 You have admin access to manage lotteries, payments, and users.
               </ItemDescription>
             </ItemContent>
+
           </Item>
         )}
 
