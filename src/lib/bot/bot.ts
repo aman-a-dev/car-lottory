@@ -1,16 +1,15 @@
 import "server-only"
-import { Bot } from "grammy"
 
-const token = process.env.BOT_TOKEN
-if (!token) {
-  throw new Error("Missing BOT_TOKEN environment variable")
-}
+// Side-effect imports: each handler file registers itself on the shared
+// bot instance. Ordering matters only where two handlers could match the
+// same update; commands run before the text catch-all.
+import "./handlers/start"
+import "./handlers/menu"
+import "./handlers/lottery"
+import "./handlers/purchase"
+import "./handlers/tickets"
+import "./handlers/profile"
+import "./handlers/support"
+import "./handlers/text-router"
 
-/**
- * Single shared grammY Bot instance.
- *
- * `new Bot()` does not connect — the webhook handler at `src/app/(bot)/bot/route.ts`
- * is expected to call `bot.handleUpdate(request.json())` (or `bot.start()` in dev).
- * Importing this from a server action is safe.
- */
-export const bot = new Bot(token)
+export { bot } from "./instance"
