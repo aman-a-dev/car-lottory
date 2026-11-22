@@ -14,8 +14,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         src="https://telegram.org/js/telegram-web-app.js"
         strategy="beforeInteractive"
       />
-      <body className="min-h-full flex flex-col pb-30">{children}</body>
-      <Toaster />
+      <body className="min-h-full flex flex-col pb-30">
+        {children}
+        <Toaster />
+      </body>
       <TelegramInit />
     </html>
   );
